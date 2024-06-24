@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String @id @default(uuid())
+  gender        String
+  date_of_birth String
+  email         String  @unique
+  password      String
+  image         String?
+
+  bloodGroup BloodGroup @default(A_POSITIVE)
+  contactNo  String
+  address    String
+  firstName  String
+  lastName   String
+  role       Role?      @default(donor)
+  donor      Donor?
+  recipient Recipient?
+  @@map("users")
+}
+
+model Donor {
+  userId             String       @id @unique @map("id")
+  user               User         @relation(fields: [userId], references: [id])
+  donationRequest    DonationRequest[]
+  last_donation_date DateTime
+  reviews            Reviews[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@map("donors")
+}
+
+model Recipient {
+ userId             String       @id @unique @map("id")
+  user               User         @relation(fields: [userId], references: [id])
+  
+  hospital_name       String
+  doctor_name         String
+  doctor_phone_number String
+  donationRequest     DonationRequest[]
+  reviews             Reviews[]
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@map("recipients")
+}
+
+model DonationRequest {
+  id          String     @id @default(uuid())
+  recipientId String
+  donorId     String
+  hospitalId  String
+  Donor       Donor?     @relation(fields: [donorId], references: [userId])
+  Recipient   Recipient? @relation(fields: [recipientId], references: [userId])
+  Hospital    Hospital?  @relation(fields: [hospitalId], references: [id])
+  status      String
+
+  @@map("donation_requests")
+}
+
+model Hospital {
+  id   String @id @default(uuid())
+  name String
+
+  contactNo       String
+  address         String?
+  donationRequest DonationRequest[]
+  bloodBank       BloodBank[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@map("hospitals")
+}
+
+model BloodBank {
+  id String @id @default(uuid())
+
+  hospitalId      String
+  Hospital        Hospital?    @relation(fields: [hospitalId], references: [id])
+  availableGroups BloodGroup[]
+
+  @@map("blood_banks")
+}
+
+model Reviews {
+  id          String     @id @default(uuid())
+  donorId     String
+  recipientId String
+  Donor       Donor?     @relation(fields: [donorId], references: [userId])
+  Recipient   Recipient? @relation(fields: [recipientId], references: [userId])
+
+  @@map("reviews")
+}
+
+enum NotificationType {
+  emergency
+  lessEmergency
+}
+
+enum Role {
+  donor
+  recipient
+  admin
+}
+
+enum BloodGroup {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+}
